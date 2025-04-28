@@ -1,57 +1,38 @@
-# Start from the official Ubuntu 24.04 (Noble) base image
-FROM ubuntu:24.04
+# Use an official ROS2 image as a base image
+FROM ros:humble-ros-base
 
-# Set non-interactive mode for apt to avoid prompts during install
-ENV DEBIAN_FRONTEND=noninteractive
+# Set environment variables to avoid warnings
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
 
-# Update package list and install basic dependencies
+# Install dependencies
 RUN apt-get update && apt-get install -y \
-    locales \
-    lsb-release \
-    wget \
-    curl \
-    gnupg2 \
-    build-essential \        # For C++ development
-    python3-colcon-common-extensions \ # For building ROS2 workspaces
-    python3-pip \             # Python package manager
-    python3-rosdep \          # Dependency manager for ROS
-    python3-argcomplete \     # Auto-completion for ROS2 CLI
-    git \                     # Version control tool
+    python3-colcon-common-extensions \
+    python3-pip \
+    python3-rosdep \
+    python3-vcstool \
+    sudo \
     && rm -rf /var/lib/apt/lists/*
 
-# Generate and configure locale to support UTF-8
-RUN locale-gen en_US en_US.UTF-8 && \
-    update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
-ENV LANG en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
+# Remove existing rosdep configuration if exists, then initialize rosdep
+RUN sudo rm -f /etc/ros/rosdep/sources.list.d/20-default.list \
+    && sudo rosdep init \
+    && sudo rosdep update
 
-# Add the ROS2 repository to the apt sources list
-RUN echo "deb [arch=amd64 signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" \
-    | tee /etc/apt/sources.list.d/ros2.list
+# Install additional tools for development
+RUN pip3 install --upgrade setuptools
 
-# Import the ROS2 GPG key
-RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | \
-    gpg --dearmor -o /usr/share/keyrings/ros-archive-keyring.gpg
+# Create a workspace directory
+RUN mkdir -p /root/ros2_ws/src
 
-# Install ROS2 Jazzy Desktop version
-RUN apt-get update && apt-get install -y \
-    ros-jazzy-desktop \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set up ROS2 environment variables automatically on container startup
-SHELL ["/bin/bash", "-c"]
-RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
-ENV ROS_DISTRO jazzy
-
-# Initialize rosdep (safe to ignore the error if already initialized)
-RUN rosdep init || true
-RUN rosdep update
-
-# Set the working directory inside the container
+# Set the working directory
 WORKDIR /root/ros2_ws
 
-# Expose a ROS2 default communication port (optional)
-EXPOSE 11311
+# Optionally clone your project here (uncomment if needed)
+# RUN git clone https://github.com/your/repo.git src/
 
-# Default command when container starts
-CMD ["/bin/bash"]
+# Build the workspace using colcon
+RUN colcon build
+
+# Set the entrypoint for the container
+ENTRYPOINT ["/bin/bash"]

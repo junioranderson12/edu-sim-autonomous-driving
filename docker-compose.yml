@@ -1,0 +1,20 @@
+services:
+  ros2-jazzy:
+    image: ros2-jazzy:latest
+    container_name: ros2_jazzy_container
+    runtime: nvidia
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${HOME}/Dropbox/robotics-simulator-project/edu-sim-autonomous-driving/ros2_ws:/root/ros2_ws  # Mount your local ros2_ws
+    network_mode: host
+    privileged: true
+    stdin_open: true
+    tty: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
