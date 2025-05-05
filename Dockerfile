@@ -1,5 +1,5 @@
 # Use an official ROS2 image as a base image
-FROM ros:humble-ros-base
+FROM ros:jazzy-ros-base
 
 # Set environment variables to avoid warnings
 ENV LANG C.UTF-8
@@ -19,8 +19,8 @@ RUN sudo rm -f /etc/ros/rosdep/sources.list.d/20-default.list \
     && sudo rosdep init \
     && sudo rosdep update
 
-# Install additional tools for development
-RUN pip3 install --upgrade setuptools
+# Upgrade setuptools (override the Python managed env protection)
+RUN pip3 install --break-system-packages --upgrade setuptools
 
 # Create a workspace directory
 RUN mkdir -p /root/ros2_ws/src
@@ -33,6 +33,9 @@ WORKDIR /root/ros2_ws
 
 # Build the workspace using colcon
 RUN colcon build
+
+# Set up ROS environment in every shell
+RUN echo "source /opt/ros/jazzy/setup.bash" >> /root/.bashrc
 
 # Set the entrypoint for the container
 ENTRYPOINT ["/bin/bash"]
