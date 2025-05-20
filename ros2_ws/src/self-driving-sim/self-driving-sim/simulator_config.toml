@@ -1,0 +1,26 @@
+[controlled_vehicle]
+m = 1500    # kg
+I_z = 2250  # kg·m²
+l_f = 1.2   # distance from CoG to front axle [m]
+l_r = 1.5   # distance from CoG to rear axle [m]
+C_f = 16000 # N/rad
+C_r = 17000 # N/rad
+
+lon_pos = 0.0
+lat_pos = 0.0
+heading = 0.0
+speed = 19.0
+lane = 0
+
+
+[simulator]
+lane_width = 3.5
+number_of_lanes = 3
+time_step = 0.1
+car_perc = 0.6          #percentage of cars in the simulation
+truck_perc = 0.2        #percentage of trucks in the simulation
+bus_perc = 0.1          #percentage of buses in the simulation
+motorcycle_perc = 0.1   #percentage of motorcycles in the simulation
+x_max = 1000
+x_min = -1000
+speed_limit = 20

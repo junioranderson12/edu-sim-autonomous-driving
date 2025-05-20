@@ -9,6 +9,12 @@ ENV LC_ALL C.UTF-8
 RUN apt-get update && apt-get install -y \
     python3-colcon-common-extensions \
     python3-pip \
+    python3-tk \
+    libgl1 \
+    libxrender1 \
+    libxext6 \
+    libsm6 \
+    x11-apps \
     python3-rosdep \
     python3-vcstool \
     sudo \
@@ -21,6 +27,11 @@ RUN sudo rm -f /etc/ros/rosdep/sources.list.d/20-default.list \
 
 # Upgrade setuptools (override the Python managed env protection)
 RUN pip3 install --break-system-packages --upgrade setuptools
+
+# Install additional Python packages
+RUN pip3 install --break-system-packages \
+    scipy \
+    matplotlib
 
 # Create a workspace directory
 RUN mkdir -p /root/ros2_ws/src
