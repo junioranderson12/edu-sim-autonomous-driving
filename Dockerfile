@@ -31,7 +31,8 @@ RUN pip3 install --break-system-packages --upgrade setuptools
 # Install additional Python packages
 RUN pip3 install --break-system-packages \
     scipy \
-    matplotlib
+    matplotlib \
+    toml
 
 # Create a workspace directory
 RUN mkdir -p /root/ros2_ws/src

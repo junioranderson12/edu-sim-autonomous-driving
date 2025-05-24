@@ -5,13 +5,11 @@ l_f = 1.2   # distance from CoG to front axle [m]
 l_r = 1.5   # distance from CoG to rear axle [m]
 C_f = 16000 # N/rad
 C_r = 17000 # N/rad
-
 lon_pos = 0.0
 lat_pos = 0.0
 heading = 0.0
 speed = 19.0
 lane = 0
-
 
 [simulator]
 lane_width = 3.5
@@ -21,6 +19,15 @@ car_perc = 0.6          #percentage of cars in the simulation
 truck_perc = 0.2        #percentage of trucks in the simulation
 bus_perc = 0.1          #percentage of buses in the simulation
 motorcycle_perc = 0.1   #percentage of motorcycles in the simulation
-x_max = 1000
-x_min = -1000
+x_max = 100
+x_min = -100
 speed_limit = 20
+number_of_vehicles = 10
+user_surr_vehicles_params = true
+max_episodes = 3
+frames_per_episode = 20
+
+[surrounding_vehicles]
+config_path = "surr_vehicles_config/"
+scenes = ["scene_1"]
+use_all_scenes = true

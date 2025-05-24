@@ -6,7 +6,7 @@ Author: Júnior Anderson Rodrigues da Silva
 Email: juniorars@gmail.com
 Date: 2025-05-01
 """
-
+from __future__ import annotations
 import numpy as np
 from dataclasses import dataclass
 from config import Config
@@ -175,13 +175,16 @@ class PolynomialTrajectory:
 
 class Vehicle:
     block_all_lc = False
-    number_of_vehicles = 2
-    def __init__(self, cfg: Config, vehicle_id: int, vehicle_type: str, vehicle_params: dict = None):
-        self.ID              = vehicle_id
+    number_of_vehicles = 0
+    def __init__(self, cfg: Config, vehicle_type: str, vehicle_params: dict = None):
+        Vehicle.number_of_vehicles += 1
+        self.id              = Vehicle.number_of_vehicles
         self.lane_width      = cfg.lane_width
         self.number_of_lanes = cfg.number_of_lanes
         self.time_step       = cfg.time_step
         self.speed_limit     = cfg.speed_limit
+        self.lon_pos_min     = cfg.x_min
+        self.lon_pos_max     = cfg.x_max
         self.is_changing_lane= False
         if vehicle_params is not None:
             self.features, self.idm_params, self.mobil_params, state = \
@@ -191,22 +194,28 @@ class Vehicle:
             self.idm_params      = self.idm_params_factory(vehicle_type)
             self.mobil_params    = self.mobil_params_factory(vehicle_type)
             state = self.state_factory()
+        self.features["track_id"] = self.id
         self.surr_vehicles   = self.create_surroundings()
         self.lon_pos         = state["lon_pos"]
         self.lat_pos         = state["lat_pos"]
         self.heading         = state["heading"]
         self.speed           = state["speed"]
         self.lane            = state["lane"]
-        self.lon_pos_max     = cfg.x_max
-        self.lon_pos_min     = cfg.x_min
-        number_of_vehicles += 1
-    
+
+    @staticmethod    
+    def restart_static_vars():
+        """
+        Restart static variables of Vehicle class.
+        """
+        Vehicle.number_of_vehicles = 0
+        Vehicle.block_all_lc = False
+
     def features_factory(self, vehicle_type: str) -> dict:
         """
         Creates the vehicle features based on the vehicle type. The features are:
-            - TRACK_ID: The track id of the vehicle.
-            - LENGTH: The length of the vehicle.
-            - WIDTH: The width of the vehicle.
+            - track_id: The track id of the vehicle.
+            - length: The length of the vehicle.
+            - width: The width of the vehicle.
         The length and width are generated based on the vehicle type.
 
         Args:
@@ -219,37 +228,35 @@ class Vehicle:
         Returns:
             dict: The features of the vehicle.
         """
-
-        TRACK_ID = self.ID
         if vehicle_type == "car":
-            LENGTH = 3.0 + np.random.uniform(0., 1.0)
-            WIDTH = 1.5 + np.random.uniform(0., 0.5)
+            length = 3.0 + np.random.uniform(0., 1.0)
+            width = 1.5 + np.random.uniform(0., 0.5)
         elif vehicle_type == "bus":
-            LENGTH = 12.0 + np.random.rand() * 2.0
-            WIDTH = 2.5
+            length = 10.0 + np.random.uniform(0., 2.0)
+            width = 2.5 + np.random.uniform(-0.3, 0.3)
         elif vehicle_type == "truck":
-            LENGTH = 10.0 + np.random.rand() * 2.0
-            WIDTH = 2.5
+            length = 8.0 + np.random.uniform(0., 2.0)
+            width = 2.5 + np.random.uniform(-0.3, 0.3)
         elif vehicle_type == "motorcycle":
-            LENGTH = 1.5
-            WIDTH = 0.5
+            length = 1.5
+            width = 0.5
         features = {
-            "TRACK_ID": TRACK_ID,
-            "LENGTH": LENGTH,
-            "WIDTH": WIDTH,
+            "type": vehicle_type,
+            "length": length,
+            "width": width,
         }
         return features
     
     def idm_params_factory(self, vehicle_type: str) -> dict:
         """
         Creates the IDM parameters based on the vehicle type. The parameters are:
-            - DESIRED_SPEED: The desired speed of the vehicle.
-            - JAM_DISTANCE: The jam distance of the vehicle.
-            - DESIRED_TIME_GAP: The desired time gap of the vehicle.
-            - MAX_ACCELERATION: The maximum acceleration of the vehicle.
-            - DESIRED_DECELERATION: The desired deceleration of the vehicle.
-            - DELTA: The delta of the vehicle.
-            - SAFE_BRAKE: The safe brake of the vehicle.
+            - desired_speed: The desired speed of the vehicle.
+            - jam_distance: The jam distance of the vehicle.
+            - desired_time_gap: The desired time gap of the vehicle.
+            - max_acceleration: The maximum acceleration of the vehicle.
+            - desired_deceleration: The desired deceleration of the vehicle.
+            - delta: The delta of the vehicle.
+            - safe_brake: The safe brake of the vehicle.
         The parameters are generated based on the vehicle type.
 
         Args:
@@ -263,12 +270,12 @@ class Vehicle:
             dict: The IDM parameters of the vehicle.
         """
         if vehicle_type == "car" or vehicle_type == "motorcycle":
-            DESIRED_SPEED = self.speed_limit - np.random.ufniform(0., 2.0)
+            DESIRED_SPEED = self.speed_limit - np.random.uniform(0., 2.0)
             MAX_ACCELERATION = np.random.uniform(2.0, 3.0)
             DESIRED_DECELERATION = 3.0
             SAFE_BRAKE = 4.0
         elif vehicle_type == "bus" or vehicle_type == "truck":
-            DESIRED_SPEED = self.speed_limit * 0.7 - np.random.ufniform(0., 3.0)
+            DESIRED_SPEED = self.speed_limit * 0.7 - np.random.uniform(0., 3.0)
             MAX_ACCELERATION = np.random.uniform(1.0, 2.0)
             DESIRED_DECELERATION = 2.5
             SAFE_BRAKE = 3.0
@@ -278,21 +285,21 @@ class Vehicle:
         DELTA = 4
         
         idm_params = {
-            "DESIRED_SPEED" : DESIRED_SPEED,
-            "JAM_DISTANCE" : JAM_DISTANCE,
-            "DESIRED_TIME_GAP" : DESIRED_TIME_GAP,
-            "MAX_ACCELERATION" : MAX_ACCELERATION,
-            "DESIRED_DECELERATION" : DESIRED_DECELERATION,
-            "DELTA" : DELTA,
-            "SAFE_BRAKE" : SAFE_BRAKE
+            "desired_speed" : DESIRED_SPEED,
+            "jam_distance" : JAM_DISTANCE,
+            "desired_time_gap" : DESIRED_TIME_GAP,
+            "max_acceleration" : MAX_ACCELERATION,
+            "desired_deceleration" : DESIRED_DECELERATION,
+            "delta" : DELTA,
+            "safe_brake" : SAFE_BRAKE
         }
         return idm_params
     
     def mobil_params_factory(self, vehicle_type: str) -> dict:
         """
         Creates the MOBIL parameters based on the vehicle type. The parameters are:
-            - POLITENESS: The politeness of the vehicle.
-            - ACC_THRESHOLD: The acceleration threshold of the vehicle.
+            - politeness: The politeness of the vehicle.
+            - acc_threshold: The acceleration threshold of the vehicle.
             - is_lc_allowed: boolean indicating if lane change is allowed.
         The parameters are generated based on the vehicle type.
 
@@ -313,8 +320,8 @@ class Vehicle:
             POLITENESS = np.random.uniform(0., 1.0)
             ACC_THRESHOLD = np.random.uniform(0., 0.25)
         mobil_params = {
-            "POLITENESS" : POLITENESS,
-            "ACC_THRESHOLD" : ACC_THRESHOLD,
+            "politeness" : POLITENESS,
+            "acc_threshold" : ACC_THRESHOLD,
             "is_lc_allowed" : True
         }
         return mobil_params
@@ -345,7 +352,7 @@ class Vehicle:
             "lon_pos": np.random.uniform(self.lon_pos_min, self.lon_pos_max),
             "lat_pos": lane * self.lane_width,
             "heading": 0.0,
-            "speed": self.idm_params["DESIRED_SPEED"] + np.random.normal(loc=0.0, scale=1.0),
+            "speed": self.idm_params["desired_speed"] + np.random.normal(loc=0.0, scale=1.0),
             "lane": lane
         }
         return state
@@ -444,7 +451,7 @@ class Vehicle:
             if next_lane == "stay" or Vehicle.block_all_lc:
                 acc = idm_model(self, vehicles_dict, lanes, self.surr_vehicles["front_same_lane"])
                 curvature = 0.0
-                self.make_step(curvature, acc)
+                self.apply_control_inputs(curvature, acc)
                 return
             else:
                 self.lc_trajectory = self.make_lane_change(next_lane, acc)
@@ -460,7 +467,7 @@ class Vehicle:
                 Vehicle.block_all_lc = False
                 self.lc_trajectory = None
 
-        self.make_step(curvature, acc)
+        self.apply_control_inputs(curvature, acc)
 
     def make_lane_change(self, target_lane: str, acc: float):
         """
@@ -496,6 +503,19 @@ class Vehicle:
         vehicles_dict = update_surr_vehicles_in_front(vehicles_dict, False)
         vehicles_dict = update_surr_vehicles_in_front(vehicles_dict, True)
         return vehicles_dict
+    
+    @staticmethod
+    def is_collision(vehicle:Vehicle, other_vehicle:Vehicle,
+                 collision_thr_lon: float, collision_thr_lat: float) -> bool: 
+        if vehicle != other_vehicle:
+            # Check for collision
+            if abs(vehicle.lon_pos - other_vehicle.lon_pos) < \
+                collision_thr_lon + (vehicle.features["length"] + other_vehicle.features["length"]) / 2 and \
+                abs(vehicle.lat_pos - other_vehicle.lat_pos) < \
+                collision_thr_lat + (vehicle.features["width"] + other_vehicle.features["width"]) / 2:
+                # Collision detected
+                return True
+        return False
 
 class ControlledVehicle(Vehicle):
     def __init__(self, cfg: Config, vehicle_id: int, vehicle_type: str, vehicle_params: dict = None):
@@ -558,7 +578,7 @@ def idm_model(vehicle: Vehicle, vehicles_dict: dict, lanes: list, leader_key: in
     """
     s = vehicle.lon_pos
     v = vehicle.speed
-    length = vehicle.features["LENGTH"]
+    length = vehicle.features["length"]
     #IDM must be applied in case of reaching the end of lane.
     if leader_key == -1:
         lane = vehicle.lane
@@ -570,19 +590,19 @@ def idm_model(vehicle: Vehicle, vehicles_dict: dict, lanes: list, leader_key: in
         leader = vehicles_dict[leader_key]
         s_leader = leader.lon_pos
         v_leader = leader.speed
-        leader_length = leader.features["LENGTH"]
+        leader_length = leader.features["length"]
 
         length_aver = (leader_length + length)/2
         delta_s = s_leader - s - length_aver
         delta_v = v - v_leader
     
-    DESIRED_SPEED = vehicle.idm_params["DESIRED_SPEED"]
-    JAM_DISTANCE = vehicle.idm_params["JAM_DISTANCE"]
-    DESIRED_TIME_GAP = vehicle.idm_params["DESIRED_TIME_GAP"]
-    MAX_ACCELERATION = vehicle.idm_params["MAX_ACCELERATION"]
-    DESIRED_DECELERATION = vehicle.idm_params["DESIRED_DECELERATION"]
-    DELTA = vehicle.idm_params["DELTA"]
-    SAFE_BRAKE = vehicle.idm_params["SAFE_BRAKE"]
+    DESIRED_SPEED = vehicle.idm_params["desired_speed"]
+    JAM_DISTANCE = vehicle.idm_params["jam_distance"]
+    DESIRED_TIME_GAP = vehicle.idm_params["desired_time_gap"]
+    MAX_ACCELERATION = vehicle.idm_params["max_acceleration"]
+    DESIRED_DECELERATION = vehicle.idm_params["desired_deceleration"]
+    DELTA = vehicle.idm_params["delta"]
+    SAFE_BRAKE = vehicle.idm_params["safe_brake"]
 
     s_prime = JAM_DISTANCE + max(0., v * DESIRED_TIME_GAP + v * delta_v/ \
                                     (2 * np.sqrt(MAX_ACCELERATION * DESIRED_DECELERATION)))
@@ -592,17 +612,7 @@ def idm_model(vehicle: Vehicle, vehicles_dict: dict, lanes: list, leader_key: in
 
     return acc
 
-def is_collision(vehicle:Vehicle, other_vehicle:Vehicle,
-                 collision_thr_lon: float, collision_thr_lat: float) -> bool: 
-    if vehicle != other_vehicle:
-        # Check for collision
-        if abs(vehicle.lon_pos - other_vehicle.lon_pos) < \
-            collision_thr_lon + (vehicle.features["LENGTH"] + other_vehicle.features["LENGTH"]) / 2 and \
-            abs(vehicle.lat_pos - other_vehicle.lat_pos) < \
-            collision_thr_lat + (vehicle.features["WIDTH"] + other_vehicle.features["WIDTH"]) / 2:
-            # Collision detected
-            return True
-    return False
+
 
 def is_beneficial(vehicle: Vehicle, vehicles_dict: dict, target_lane: str) -> bool:
     """
@@ -623,26 +633,25 @@ def is_beneficial(vehicle: Vehicle, vehicles_dict: dict, target_lane: str) -> bo
     
     new_leader_key = vehicle.surr_vehicles["front_" + target_lane + "_lane"]
     if new_leader_key == -1:
-        return True if vehicle.speed < vehicle.idm_params["DESIRED_SPEED"] - 1.0 else False
+        return True if vehicle.speed < vehicle.idm_params["desired_speed"] - 1.0 else False
     
     #TODO make time to collision a function
     leader = vehicles_dict[leader_key]
     delta_leader = leader.lon_pos - vehicle.lon_pos - \
-        (leader.features["LENGTH"] + vehicle.features["LENGTH"]) / 2
+        (leader.features["length"] + vehicle.features["length"]) / 2
     ttc = delta_leader / (vehicle.speed - leader.speed)
     if ttc < 0.:
         return False
     
     new_leader = vehicles_dict[new_leader_key]
     delta_new_leader = new_leader.lon_pos - vehicle.lon_pos - \
-        (new_leader.features["LENGTH"] + vehicle.features["LENGTH"]) / 2
+        (new_leader.features["length"] + vehicle.features["length"]) / 2
     ttc_new = delta_new_leader / (vehicle.speed - new_leader.speed)
     if ttc_new < 0.:
-        return True if vehicle.speed < vehicle.idm_params["DESIRED_SPEED"] - 1.0 else False
+        return True if vehicle.speed < vehicle.idm_params["desired_speed"] - 1.0 else False
     
-    print(ttc_new, ttc)
     return True if ttc_new > (ttc + 1.0) and \
-        (vehicle.speed < vehicle.idm_params["DESIRED_SPEED"] - 1.0) else False
+        (vehicle.speed < vehicle.idm_params["desired_speed"] - 1.0) else False
 
 def is_feasible(vehicle: Vehicle, vehicles_dict: dict, target_lane: str, lanes: list) -> bool:
     """
@@ -669,15 +678,15 @@ def is_feasible(vehicle: Vehicle, vehicles_dict: dict, target_lane: str, lanes: 
     if vehicle_in_front_same_key != -1:
         vehicle_in_front_same = vehicles_dict[vehicle_in_front_same_key]
         #TODO Implement time to collision to vehicle in front same lane
-        if is_collision(vehicle, vehicle_in_front_same, 1., 0.):
+        if Vehicle.is_collision(vehicle, vehicle_in_front_same, 1., 0.):
             return False
     if vehicle_in_front_right_key != -1:
         vehicle_in_front_right = vehicles_dict[vehicle_in_front_right_key]
-        if is_collision(vehicle, vehicle_in_front_right, 0.5, vehicle.lane_width):
+        if Vehicle.is_collision(vehicle, vehicle_in_front_right, 0.5, vehicle.lane_width):
             return False
     if vehicle_in_front_left_key != -1:
         vehicle_in_front_left = vehicles_dict[vehicle_in_front_left_key]
-        if is_collision(vehicle, vehicle_in_front_left, 0.5, vehicle.lane_width):
+        if Vehicle.is_collision(vehicle, vehicle_in_front_left, 0.5, vehicle.lane_width):
             return False
    
     #Check if the lane change is possible
@@ -718,13 +727,13 @@ def mobil_model(vehicle: Vehicle, vehicles_dict: dict, lanes: list) -> tuple:
             #Apply MOBIL conditions for lane change
             #Compute deceleration for new successor
             new_rear = vehicles_dict[new_rear_key]
-            new_rear_acc = idm_model(new_rear, vehicles_dict, lanes, vehicle.ID)   
-
+            new_rear_acc = idm_model(new_rear, vehicles_dict, lanes, vehicle.id)   
             #Execute lane change
-            POLITENESS = vehicle.mobil_params["POLITENESS"]
-            ACC_THRESHOLD = vehicle.mobil_params["ACC_THRESHOLD"]
-            MAX_ACCELERATION = vehicle.idm_params["MAX_ACCELERATION"]
+            POLITENESS = vehicle.mobil_params["politeness"]
+            ACC_THRESHOLD = vehicle.mobil_params["acc_threshold"]
+            MAX_ACCELERATION = vehicle.idm_params["max_acceleration"]
             acc = POLITENESS * (-new_rear_acc) + ACC_THRESHOLD
+            
             next_lane = target_lane if (acc < MAX_ACCELERATION) else "stay"
             return (next_lane, acc)
         
@@ -798,6 +807,7 @@ def update_surr_vehicles_in_front(vehicles_dict: dict, is_reversed: bool) -> dic
         if not is_vehicle_in_front_left:    
             v_surr[f"{direction}_left_lane"] = -1
         if not is_vehicle_in_front_right:
-            v_surr[f"{direction}_right_lane"] = -1       
+            v_surr[f"{direction}_right_lane"] = -1
+    
     return vehicles_dict
 

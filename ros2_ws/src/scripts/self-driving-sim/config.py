@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Config:
-    def __init__(self, path):
+    def __init__(self, path: str):
         self._raw = toml.load(path)
 
         #Controlled vehicle parameters
@@ -30,3 +30,12 @@ class Config:
         self.x_max = self._raw["simulator"]["x_max"]
         self.x_min = self._raw["simulator"]["x_min"]
         self.speed_limit = self._raw["simulator"]["speed_limit"]
+        self.number_of_vehicles = self._raw["simulator"]["number_of_vehicles"]
+        self.user_surr_vehicles_params = self._raw["simulator"]["user_surr_vehicles_params"]
+        self.max_episodes = self._raw["simulator"]["max_episodes"]
+        self.frames_per_episode = self._raw["simulator"]["frames_per_episode"]
+
+        #Surrounding vehicles parameters
+        self.surr_config_path = self._raw["surrounding_vehicles"]["config_path"]
+        self.scenes = self._raw["surrounding_vehicles"]["scenes"]
+        self.use_all_scenes = self._raw["surrounding_vehicles"]["use_all_scenes"]   
