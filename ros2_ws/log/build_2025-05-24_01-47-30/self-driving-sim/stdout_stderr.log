@@ -1,0 +1,38 @@
+/usr/local/lib/python3.12/dist-packages/setuptools/_distutils/dist.py:289: UserWarning: Unknown distribution option: 'tests_require'
+  warnings.warn(msg)
+running egg_info
+creating ../../build/self-driving-sim/self_driving_sim.egg-info
+writing ../../build/self-driving-sim/self_driving_sim.egg-info/PKG-INFO
+writing dependency_links to ../../build/self-driving-sim/self_driving_sim.egg-info/dependency_links.txt
+writing requirements to ../../build/self-driving-sim/self_driving_sim.egg-info/requires.txt
+writing top-level names to ../../build/self-driving-sim/self_driving_sim.egg-info/top_level.txt
+writing manifest file '../../build/self-driving-sim/self_driving_sim.egg-info/SOURCES.txt'
+reading manifest file '../../build/self-driving-sim/self_driving_sim.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file '../../build/self-driving-sim/self_driving_sim.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /root/ros2_ws/build/self-driving-sim/build/lib/self-driving-sim
+copying self-driving-sim/__init__.py -> /root/ros2_ws/build/self-driving-sim/build/lib/self-driving-sim
+copying self-driving-sim/dynamics.py -> /root/ros2_ws/build/self-driving-sim/build/lib/self-driving-sim
+copying self-driving-sim/config.py -> /root/ros2_ws/build/self-driving-sim/build/lib/self-driving-sim
+copying self-driving-sim/simulator.py -> /root/ros2_ws/build/self-driving-sim/build/lib/self-driving-sim
+running install
+running install_lib
+creating /root/ros2_ws/install/self-driving-sim/lib/python3.12/site-packages/self-driving-sim
+copying /root/ros2_ws/build/self-driving-sim/build/lib/self-driving-sim/__init__.py -> /root/ros2_ws/install/self-driving-sim/lib/python3.12/site-packages/self-driving-sim
+copying /root/ros2_ws/build/self-driving-sim/build/lib/self-driving-sim/dynamics.py -> /root/ros2_ws/install/self-driving-sim/lib/python3.12/site-packages/self-driving-sim
+copying /root/ros2_ws/build/self-driving-sim/build/lib/self-driving-sim/config.py -> /root/ros2_ws/install/self-driving-sim/lib/python3.12/site-packages/self-driving-sim
+copying /root/ros2_ws/build/self-driving-sim/build/lib/self-driving-sim/simulator.py -> /root/ros2_ws/install/self-driving-sim/lib/python3.12/site-packages/self-driving-sim
+byte-compiling /root/ros2_ws/install/self-driving-sim/lib/python3.12/site-packages/self-driving-sim/__init__.py to __init__.cpython-312.pyc
+byte-compiling /root/ros2_ws/install/self-driving-sim/lib/python3.12/site-packages/self-driving-sim/dynamics.py to dynamics.cpython-312.pyc
+byte-compiling /root/ros2_ws/install/self-driving-sim/lib/python3.12/site-packages/self-driving-sim/config.py to config.cpython-312.pyc
+byte-compiling /root/ros2_ws/install/self-driving-sim/lib/python3.12/site-packages/self-driving-sim/simulator.py to simulator.cpython-312.pyc
+running install_data
+creating /root/ros2_ws/install/self-driving-sim/share/ament_index/resource_index/packages
+copying resource/self-driving-sim -> /root/ros2_ws/install/self-driving-sim/share/ament_index/resource_index/packages
+copying package.xml -> /root/ros2_ws/install/self-driving-sim/share/self-driving-sim
+running install_egg_info
+Copying ../../build/self-driving-sim/self_driving_sim.egg-info to /root/ros2_ws/install/self-driving-sim/lib/python3.12/site-packages/self_driving_sim-0.0.0-py3.12.egg-info
+running install_scripts
+writing list of installed files to '/root/ros2_ws/build/self-driving-sim/install.log'

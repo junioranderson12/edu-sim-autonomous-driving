@@ -1,0 +1,26 @@
+[1.330s] Invoking command in '/root/ros2_ws/src/self-driving-sim': PYTHONPATH=/root/ros2_ws/build/self-driving-sim/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/root/ros2_ws/install/self-driving-sim/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/self-driving-sim build --build-base /root/ros2_ws/build/self-driving-sim/build install --record /root/ros2_ws/build/self-driving-sim/install.log --single-version-externally-managed install_data
+[1.859s] running egg_info
+[1.887s] writing ../../build/self-driving-sim/self_driving_sim.egg-info/PKG-INFO
+[1.890s] writing dependency_links to ../../build/self-driving-sim/self_driving_sim.egg-info/dependency_links.txt
+[1.890s] writing requirements to ../../build/self-driving-sim/self_driving_sim.egg-info/requires.txt
+[1.892s] writing top-level names to ../../build/self-driving-sim/self_driving_sim.egg-info/top_level.txt
+[1.961s] reading manifest file '../../build/self-driving-sim/self_driving_sim.egg-info/SOURCES.txt'
+[1.962s] adding license file 'LICENSE'
+[1.964s] writing manifest file '../../build/self-driving-sim/self_driving_sim.egg-info/SOURCES.txt'
+[1.966s] running build
+[1.966s] running build_py
+[1.967s] copying self-driving-sim/__init__.py -> /root/ros2_ws/build/self-driving-sim/build/lib/self-driving-sim
+[1.968s] copying self-driving-sim/dynamics.py -> /root/ros2_ws/build/self-driving-sim/build/lib/self-driving-sim
+[1.968s] copying self-driving-sim/config.py -> /root/ros2_ws/build/self-driving-sim/build/lib/self-driving-sim
+[1.968s] copying self-driving-sim/simulator.py -> /root/ros2_ws/build/self-driving-sim/build/lib/self-driving-sim
+[1.968s] running install
+[1.983s] running install_lib
+[2.022s] running install_data
+[2.022s] copying resource/self-driving-sim -> /root/ros2_ws/install/self-driving-sim/share/ament_index/resource_index/packages
+[2.023s] copying package.xml -> /root/ros2_ws/install/self-driving-sim/share/self-driving-sim
+[2.023s] running install_egg_info
+[2.065s] removing '/root/ros2_ws/install/self-driving-sim/lib/python3.12/site-packages/self_driving_sim-0.0.0-py3.12.egg-info' (and everything under it)
+[2.066s] Copying ../../build/self-driving-sim/self_driving_sim.egg-info to /root/ros2_ws/install/self-driving-sim/lib/python3.12/site-packages/self_driving_sim-0.0.0-py3.12.egg-info
+[2.068s] running install_scripts
+[2.256s] writing list of installed files to '/root/ros2_ws/build/self-driving-sim/install.log'
+[2.320s] Invoked command in '/root/ros2_ws/src/self-driving-sim' returned '0': PYTHONPATH=/root/ros2_ws/build/self-driving-sim/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/root/ros2_ws/install/self-driving-sim/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/self-driving-sim build --build-base /root/ros2_ws/build/self-driving-sim/build install --record /root/ros2_ws/build/self-driving-sim/install.log --single-version-externally-managed install_data
