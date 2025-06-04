@@ -28,6 +28,8 @@ RUN sudo rm -f /etc/ros/rosdep/sources.list.d/20-default.list \
 # Upgrade setuptools (override the Python managed env protection)
 RUN pip3 install --break-system-packages --upgrade setuptools
 
+RUN apt update && apt install -y ros-jazzy-rviz2
+
 # Install additional Python packages
 RUN pip3 install --break-system-packages \
     scipy \
