@@ -8,6 +8,7 @@ C_r = 17000 # N/rad
 lon_pos = 0.0
 lat_pos = 0.0
 heading = 0.0
+curvature = 0.0
 speed = 19.0
 lane = 0
 
@@ -25,12 +26,12 @@ car_perc = 0.6          #percentage of cars in the simulation
 truck_perc = 0.2        #percentage of trucks in the simulation
 bus_perc = 0.1          #percentage of buses in the simulation
 motorcycle_perc = 0.1   #percentage of motorcycles in the simulation
-x_max = 100
-x_min = -100
+x_max = 100             #max longitudinal position to spawn vehicles
+x_min = -100            #min longitudinal position to spawn vehicles
 speed_limit = 20
 
 
 [surrounding_vehicles]
 config_path = "surr_vehicles_config/"
-scenes_config = ["scene1.toml"]
+scenes_config = ["scene2.toml"]
 use_all_scenes = false

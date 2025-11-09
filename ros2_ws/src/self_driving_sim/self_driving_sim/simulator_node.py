@@ -7,7 +7,7 @@ from visualization_msgs.msg import Marker, MarkerArray
 import numpy as np
 
 from self_driving_sim.simulator import Simulator
-from custom_interfaces.msg import ControlInputs
+from custom_interfaces.msg import ControlInputs, VehicleState, VehicleStates
 
 class SimulatorNode(Node):
 
@@ -16,10 +16,11 @@ class SimulatorNode(Node):
         self.simulator = simulator
         self.clock_publisher_ = self.create_publisher(Clock, '/clock', 10)
         self.marker_array_publisher_ = self.create_publisher(MarkerArray, 'visualization_markers', 10)
+        self.vehicle_states_publisher_ = self.create_publisher(VehicleStates, 'vehicle_states', 10)
+        self.ego_vehicle_state_publisher_ = self.create_publisher(VehicleState, 'ego_vehicle_state', 10)
         self.control_inputs_subscription = self.create_subscription(ControlInputs,'control_inputs', self.control_callback, 10)
-        self.control_inputs_subscription
         self.control_acc = 0.0
-        self.control_curv = 0.0
+        self.control_curv_derivative = 0.0
         self.get_logger().info('Node created')
 
     def publish_clock(self, time_stamp):
@@ -29,6 +30,35 @@ class SimulatorNode(Node):
         clock_msg.clock.nanosec = int(1e9 * (time_stamp - int(time_stamp)))
         self.clock_publisher_.publish(clock_msg)
         return clock_msg
+    
+    def publish_ego_vehicle_state(self, vehicles: dict):
+        ego_vehicle = vehicles[1] # Assuming vehicle with id 1 is the ego vehicle
+        ego_vehicle_state_msg = VehicleState()
+        ego_vehicle_state_msg.id = int(ego_vehicle.id)
+        ego_vehicle_state_msg.lon_pos = float(ego_vehicle.lon_pos)
+        ego_vehicle_state_msg.lat_pos = float(ego_vehicle.lat_pos)
+        ego_vehicle_state_msg.heading = float(ego_vehicle.heading)
+        ego_vehicle_state_msg.curvature = float(ego_vehicle.curvature)
+        ego_vehicle_state_msg.speed = float(ego_vehicle.speed)
+        ego_vehicle_state_msg.length = float(ego_vehicle.features['length'])
+        ego_vehicle_state_msg.width = float(ego_vehicle.features['width'])
+        ego_vehicle_state_msg.lane = int(ego_vehicle.lane)
+        self.ego_vehicle_state_publisher_.publish(ego_vehicle_state_msg)
+    
+    def publish_vehicle_states(self, vehicles: dict):
+        vehicle_states_msg = VehicleStates()
+        for vehicle in vehicles.values():
+            vehicle_state_msg = VehicleState()
+            vehicle_state_msg.id = int(vehicle.id)
+            vehicle_state_msg.lon_pos = float(vehicle.lon_pos)
+            vehicle_state_msg.lat_pos = float(vehicle.lat_pos)
+            vehicle_state_msg.heading = float(vehicle.heading)
+            vehicle_state_msg.speed = float(vehicle.speed)
+            vehicle_state_msg.length = float(vehicle.features['length'])
+            vehicle_state_msg.width = float(vehicle.features['width'])
+        
+            vehicle_states_msg.states.append(vehicle_state_msg)
+        self.vehicle_states_publisher_.publish(vehicle_states_msg)
 
     def publish_markers(self, vehicles: dict):
         marker_array = MarkerArray()
@@ -69,8 +99,8 @@ class SimulatorNode(Node):
     
     def control_callback(self, msg):
         self.control_acc = msg.acceleration
-        self.control_curv = msg.curvature
-        self.get_logger().info(f'acceleration: {self.control_acc}, curvature: {self.control_curv}')
+        self.control_curv_derivative = msg.curv_derivative
+        self.get_logger().info(f'acceleration: {self.control_acc}, curvature: {self.control_curv_derivative}')
 
     def run_episode(self):
         # Simulate the vehicles
@@ -78,8 +108,10 @@ class SimulatorNode(Node):
         while self.simulator.frame < self.simulator.frames_per_episode:
             self.publish_clock(self.simulator.time_stamp)
             self.publish_markers(self.simulator.vehicle_dict)
+            self.publish_ego_vehicle_state(self.simulator.vehicle_dict)
+            self.publish_vehicle_states(self.simulator.vehicle_dict)
             rclpy.spin_once(self)
-            self.simulator.run_frame(self.control_curv, self.control_acc)
+            self.simulator.run_frame(self.control_curv_derivative, self.control_acc)
 
     def run(self):
         while self.simulator.episode < self.simulator.max_episodes:

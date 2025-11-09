@@ -51,10 +51,31 @@ struct OptimalClothoidParams {
   double s_sum;
 };
 
+struct Waypoint {
+  double x;       // x-coordinate
+  double y;       // y-coordinate
+  double theta;   // orientation (angle)
+  double kappa;   // curvature
+  double c;       // sharpness
+  double s;       // Distance along the path
+};
+
+struct Path {
+  std::vector<Waypoint> waypoints; // List of waypoints defining the path
+};
+
 
 class ClothoidPath {
   public:
     ClothoidPath();
+    Path GetClothoidPath(ClothoidPathParams clothoid_path_params,
+                              double ds);
+    Path GetOptimalPath(Pose init_pose,
+                              double kappa0,
+                              Pose final_pose,
+                              double kappaf,
+                              float ds);
+  private:
     std::pair<std::vector<double>, std::vector<double>> LoadXLYLConfigParams();
     std::pair<double, double> GetBasicClothoidCoords(double s);
     std::pair<double, double> GetGeneralClothoidCoords(double x0, double y0,
@@ -68,29 +89,28 @@ class ClothoidPath {
     ClothoidParams GetKinkPoints(ClothoidPathParams clothoid_path_params);
     ClothoidPathParams CCTurn(Pose init_pose, Pose final_pose, double kappa_max);
     ClothoidPathParams CCSshape(Pose init_pose, Pose final_pose, double kappa_max);
-    std::vector<ClothoidParams> GetClothoidPath(ClothoidPathParams clothoid_path_params,
-                                                double ds);
     OptimalClothoidParams GetOptimalClothoidParams(ClothoidParams init_params,
                                                     Pose final_pose,
                                                     double kappaf,
                                                     OptimalClothoidParams init_solution);
-    ClothoidPathParams GetOptimalManeuver(ClothoidParams init_params,
-                                                    Pose final_pose,
-                                                    double kappaf);
+
     std::pair<std::vector<double>, std::vector<double>> XlYl;
-    const double kCMin = 5.944748225238571e-04;
-    const double kCMax = 10.237604306862353e+03;
-    const double kKMax = 1.196835466593837e+02;
-    const double kCL = 1.;
-    const double kSL = 1.223430214110182e+02;
-    const double kDeltaSL = 0.002660093525200;
-    const double kCcL = 1.;
-    const double kMinStraightLength = 1e-6;
-    const std::vector<double> kXL = XlYl.first;
-    const std::vector<double> kYL = XlYl.second;
-    const double kDeltaLim = 1e-5;
-    const int kMaxIterations = 20;
+    std::vector<double> kXL;
+    std::vector<double> kYL;
+    
+
+    static constexpr double kCMin = 5.944748225238571e-04;
+    static constexpr double kCMax = 10.237604306862353e+03;
+    static constexpr double kKMax = 1.196835466593837e+02;
+    static constexpr double kCL = 1.;
+    static constexpr double kSL = 1.223430214110182e+02;
+    static constexpr double kDeltaSL = 0.002660093525200;
+    static constexpr double kCcL = 1.;
+    static constexpr double kMinStraightLength = 1e-6;
+    static constexpr double kDeltaLim = 1e-5;
+    static constexpr int kMaxIterations = 20;
     double div_s1, div_s2, div_s3;
+                                                 
 };
 } // namespace clothoid_path
 #endif // CLOTHOIDPATH_HPP

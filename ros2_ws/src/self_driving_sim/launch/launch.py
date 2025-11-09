@@ -9,5 +9,11 @@ def generate_launch_description():
             name='simulator',
             output='screen',
             parameters=[{'use_sim_time': True}]
-        )
+        ),
+        Node(
+            package='clothoid_motion_planner',
+            executable='clot_motion_planner_node',
+            name='clot_motion_planner_node',
+            parameters=[{'use_sim_time': True}]
+        ),
     ])

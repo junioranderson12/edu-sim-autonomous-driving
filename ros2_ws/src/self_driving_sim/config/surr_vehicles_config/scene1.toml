@@ -12,9 +12,10 @@ safe_brake = 4
 politeness = 0.5
 acc_threshold = 0.3
 is_lc_allowed = true
-lon_pos = -100.0
+lon_pos = -60.0
 lat_pos = 3.5
 heading = 0.0
+curvature = 0.0
 speed = 15.0
 lane = 1
 
@@ -35,6 +36,7 @@ is_lc_allowed = true
 lon_pos = -30.0
 lat_pos = 0.0
 heading = 0.0
+curvature = 0.0
 speed = 15.0
 lane = 0
 
@@ -55,6 +57,7 @@ is_lc_allowed = false
 lon_pos = -20.0
 lat_pos = 0.0
 heading = 0.0
+curvature = 0.0
 speed = 10.0
 lane = 0
 
@@ -75,5 +78,6 @@ is_lc_allowed = false
 lon_pos = -0.0
 lat_pos = 3.5
 heading = 0.0
+curvature = 0.0
 speed = 10.0
 lane = 1

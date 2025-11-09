@@ -19,6 +19,7 @@ class Config:
         self.lon_pos = self._raw["controlled_vehicle"]["lon_pos"]
         self.lat_pos = self._raw["controlled_vehicle"]["lat_pos"]
         self.heading = self._raw["controlled_vehicle"]["heading"]
+        self.curvature = self._raw["controlled_vehicle"]["curvature"]
         self.speed = self._raw["controlled_vehicle"]["speed"]
         self.lane = self._raw["controlled_vehicle"]["lane"]
 

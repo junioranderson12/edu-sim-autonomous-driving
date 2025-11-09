@@ -202,6 +202,7 @@ class Vehicle:
         self.lon_pos         = state["lon_pos"]
         self.lat_pos         = state["lat_pos"]
         self.heading         = state["heading"]
+        self.curvature       = state["curvature"]
         self.speed           = state["speed"]
         self.lane            = state["lane"]
 
@@ -355,6 +356,7 @@ class Vehicle:
             "lon_pos": np.random.uniform(self.lon_pos_min, self.lon_pos_max),
             "lat_pos": lane * self.lane_width,
             "heading": 0.0,
+            "curvature": 0.0,
             "speed": self.idm_params["desired_speed"] + np.random.normal(loc=0.0, scale=1.0),
             "lane": lane
         }
@@ -433,11 +435,30 @@ class Vehicle:
         Returns:
             dictionay: The updated state of the vehicle.
         """
-        self.lon_pos = self.lon_pos + self.speed * np.cos(self.heading) * self.time_step
-        self.lat_pos = self.lat_pos + self.speed * np.sin(self.heading) * self.time_step
-        self.heading = self.heading + curvature * self.speed * self.time_step
-        self.speed   = max(0., self.speed + accel * self.time_step)
-        self.lane    = self.get_current_lane(self.lat_pos)
+        self.lon_pos     = self.lon_pos + self.speed * np.cos(self.heading) * self.time_step
+        self.lat_pos     = self.lat_pos + self.speed * np.sin(self.heading) * self.time_step
+        self.heading     = self.heading + curvature * self.speed * self.time_step
+        self.speed       = max(0., self.speed + accel * self.time_step)
+        self.lane        = self.get_current_lane(self.lat_pos)
+
+    def apply_ego_control_inputs(self, curv_derivative: float, accel: float) -> None:
+        """
+        Returns the next state of the vehicle based on model inputs.
+
+        Args:
+            curvature (float)       : Curvature.
+            accel (float)           : Acceleration.
+            time_step (float)       : Time step.
+
+        Returns:
+            dictionay: The updated state of the vehicle.
+        """
+        self.lon_pos     = self.lon_pos + self.speed * np.cos(self.heading) * self.time_step
+        self.lat_pos     = self.lat_pos + self.speed * np.sin(self.heading) * self.time_step
+        self.heading     = self.heading + self.curvature * self.speed * self.time_step
+        self.curvature   = self.curvature + curv_derivative * self.time_step
+        self.speed       = max(0., self.speed + accel * self.time_step)
+        self.lane        = self.get_current_lane(self.lat_pos)
 
     def make_step(self, vehicles_dict: dict, lanes: list):
         """

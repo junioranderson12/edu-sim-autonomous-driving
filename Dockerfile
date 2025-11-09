@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y \
     python3-rosdep \
     python3-vcstool \
     sudo \
+    libeigen3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Remove existing rosdep configuration if exists, then initialize rosdep
@@ -35,6 +36,9 @@ RUN pip3 install --break-system-packages \
     scipy \
     matplotlib \
     toml
+
+# Install gdb for debugging
+RUN apt-get update && apt-get install -y gdb
 
 # Create a workspace directory
 RUN mkdir -p /root/ros2_ws/src

@@ -1,2 +1,2 @@
 float32 acceleration
-float32 curvature
+float32 curv_derivative

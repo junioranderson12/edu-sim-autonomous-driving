@@ -1,0 +1,9 @@
+int32 id
+float64 lon_pos
+float64 lat_pos
+float64 heading
+float64 curvature
+float64 speed
+float64 length
+float64 width
+int32 lane

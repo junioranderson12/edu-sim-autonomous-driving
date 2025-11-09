@@ -171,6 +171,7 @@ class Simulator:
                         "lon_pos": raw[vehicle]["lon_pos"],
                         "lat_pos": raw[vehicle]["lat_pos"],
                         "heading": raw[vehicle]["heading"],
+                        "curvature": raw[vehicle]["curvature"],
                         "speed": raw[vehicle]["speed"],
                         "lane": raw[vehicle]["lane"]
                     }
@@ -197,7 +198,10 @@ class Simulator:
                 psi = vehicle.heading
 
             #Vehicles color
-            facecolor = 'blue'
+            if vehicle.id == Vehicle.controlled_vehicle_id:
+                facecolor = 'red'
+            else:
+                facecolor = 'blue'
             scale = 1.0
             
             rect = patches.Rectangle((vehicle.lon_pos - (vehicle.features["length"]/scale)/2.0, 
@@ -226,13 +230,13 @@ class Simulator:
         for rect in rect_list:
             rect.remove()
 
-    def run_frame(self, curvature: float=0.0, acceleration: float=0.0) -> None:
+    def run_frame(self, curv_derivative: float=0.0, acceleration: float=0.0) -> None:
         # Simulate the vehicles
         self.visualize_vehicles(self.vehicle_dict)
         self.vehicle_dict = Vehicle.update_surr_vehicles(self.vehicle_dict)
         for vehicle in self.vehicle_dict.values():
             if vehicle.id == Vehicle.controlled_vehicle_id:
-                vehicle.apply_control_inputs(curvature, acceleration)
+                vehicle.apply_ego_control_inputs(curv_derivative, acceleration)
             else:
                 vehicle.make_step(self.vehicle_dict, self.lanes)
         self.time_stamp += self.time_step

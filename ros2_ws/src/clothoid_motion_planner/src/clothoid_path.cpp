@@ -1,4 +1,4 @@
-#include "clothoid_planner/clothoid_path.hpp"
+#include "clothoid_motion_planner/clothoid_path.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -9,16 +9,23 @@
 #include <numeric>
 #include <Eigen/Dense>
 
+#include "ament_index_cpp/get_package_share_directory.hpp"
+
 namespace clothoid{
 
-ClothoidPath::ClothoidPath() : 
-  XlYl(LoadXLYLConfigParams()) {
+ClothoidPath::ClothoidPath(){
+  XlYl = LoadXLYLConfigParams();
+  kXL = XlYl.first;
+  kYL = XlYl.second;
 }
 
 std::pair<std::vector<double>, std::vector<double>> ClothoidPath::LoadXLYLConfigParams() {
-  std::ifstream file("../src/Clothoid_LT.txt");
+  std::string package_share_dir = ament_index_cpp::get_package_share_directory("clothoid_motion_planner");
+  std::string file_path = package_share_dir + "/data/Clothoid_LT.txt";
+  std::ifstream file(file_path);
+
   if (!file.is_open()) {
-    std::cerr << "Error opening file!" << std::endl;
+    std::cerr << "Error opening fil!" << std::endl;
   }
 
   std::vector<double> x, y;
@@ -482,7 +489,7 @@ ClothoidPathParams ClothoidPath::CCSshape(Pose init_pose, Pose final_pose, doubl
   double v1_ang = NormalizeAngle(std::atan2((y1 - y0) / mod_v1, (x1 - x0) / mod_v1));
   double alpha1 = NormalizeAngle(v1_ang - theta0);
   double alpha2 = NormalizeAngle(theta1 - v1_ang);
-  double alpha = std::abs(NormalizeAngle(theta1 - theta0) / 2);
+  //double alpha = std::abs(NormalizeAngle(theta1 - theta0) / 2);
 
   ClothoidPathParams clothoid_path_params;
   int sign_alpha1 = (alpha1 > 0) ? 1 : -1;
@@ -518,7 +525,7 @@ ClothoidPathParams ClothoidPath::CCSshape(Pose init_pose, Pose final_pose, doubl
 
 }
 
-std::vector<ClothoidParams> ClothoidPath::GetClothoidPath(
+Path ClothoidPath::GetClothoidPath(
   ClothoidPathParams clothoid_path_params, double ds) {
   /*
   @brief
@@ -565,7 +572,7 @@ std::vector<ClothoidParams> ClothoidPath::GetClothoidPath(
   }
   
   double xc, yc, thetac, kappac, sigmac, sc;
-  std::vector<ClothoidParams> clothoid_waypoints;
+  Path clothoid_waypoints;
   while (l <= kLfinal) {
     if (c != 0) {
       std::tie(xc, yc) = GetGeneralClothoidCoords(x0, y0, theta0, kappa0, c, s);
@@ -584,7 +591,7 @@ std::vector<ClothoidParams> ClothoidPath::GetClothoidPath(
     kappac = kappa0 + c * std::abs(s);
     sigmac = c;
     sc = l;
-    clothoid_waypoints.push_back({xc, yc, thetac, kappac, sigmac, sc});
+    clothoid_waypoints.waypoints.push_back({xc, yc, thetac, kappac, sigmac, sc});
 
     s += ds;
     l += std::abs(ds);
@@ -598,7 +605,7 @@ std::vector<ClothoidParams> ClothoidPath::GetClothoidPath(
       kappac = clot_params_aux.kappa0;
       sigmac = c;
       sc = l;
-      clothoid_waypoints.push_back({xc, yc, thetac, kappac, sigmac, sc});
+      clothoid_waypoints.waypoints.push_back({xc, yc, thetac, kappac, sigmac, sc});
       break;
     }
 
@@ -712,15 +719,16 @@ OptimalClothoidParams ClothoidPath::GetOptimalClothoidParams(ClothoidParams init
   return optimal_params;
 }
 
-ClothoidPathParams ClothoidPath::GetOptimalManeuver(ClothoidParams init_params,
-                                                      Pose final_pose,
-                                                      double kappaf) {
+Path ClothoidPath::GetOptimalPath(Pose init_pose,
+                                    double kappa0,
+                                    Pose final_pose,
+                                    double kappaf,
+                                    float ds) {
   /*
 
   */
-  Pose init_pose = {init_params.x0, init_params.y0, init_params.theta0};
   ClothoidPathParams clot_path_params;
-
+  ClothoidParams init_params = {init_pose.x, init_pose.y, init_pose.theta, kappa0, 0.0, 0.0};                                                        
   //Compute initial parameters to speed up the optimization process
   if (std::abs(NormalizeAngle(final_pose.theta - init_pose.theta)) < 0.36) {
     clot_path_params = CCSshape(init_pose, final_pose, 10.0);
@@ -750,7 +758,10 @@ ClothoidPathParams ClothoidPath::GetOptimalManeuver(ClothoidParams init_params,
     {solution.sigma1, solution.sigma2, sigma3},
     {solution.s_sum / div_s1, solution.s_sum / div_s2, s_sum / div_s3}
   };
-  return optimal_clothoid_path_params;
+
+  //Get the path with the optimal parameters
+  Path optimal_path = GetClothoidPath(optimal_clothoid_path_params, ds);
+  return optimal_path;
 }
 
 } // namespace clothoid
