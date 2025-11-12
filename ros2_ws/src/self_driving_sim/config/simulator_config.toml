@@ -14,20 +14,20 @@ lane = 0
 
 [simulator]
 number_of_vehicles = 10
-user_surr_vehicles_params = true
-max_episodes = 2
-frames_per_episode = 1000
+user_surr_vehicles_params = false
+max_episodes = 5
+frames_per_episode = 100
 controlled_vehicle_id = 1 #If you don't want to control any vehicle, pass -1
 
 lane_width = 3.5
-number_of_lanes = 3
+number_of_lanes = 4
 time_step = 0.1
 car_perc = 0.6          #percentage of cars in the simulation
 truck_perc = 0.2        #percentage of trucks in the simulation
 bus_perc = 0.1          #percentage of buses in the simulation
 motorcycle_perc = 0.1   #percentage of motorcycles in the simulation
-x_max = 100             #max longitudinal position to spawn vehicles
-x_min = -100            #min longitudinal position to spawn vehicles
+x_max = 40            #max longitudinal position to spawn vehicles
+x_min = -40            #min longitudinal position to spawn vehicles
 speed_limit = 20
 
 

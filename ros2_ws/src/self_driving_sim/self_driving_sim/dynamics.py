@@ -274,12 +274,12 @@ class Vehicle:
             dict: The IDM parameters of the vehicle.
         """
         if vehicle_type == "car" or vehicle_type == "motorcycle":
-            DESIRED_SPEED = self.speed_limit - np.random.uniform(0., 2.0)
+            DESIRED_SPEED = self.speed_limit - np.random.uniform(0., 1.0)
             MAX_ACCELERATION = np.random.uniform(2.0, 3.0)
             DESIRED_DECELERATION = 3.0
             SAFE_BRAKE = 4.0
         elif vehicle_type == "bus" or vehicle_type == "truck":
-            DESIRED_SPEED = self.speed_limit * 0.7 - np.random.uniform(0., 3.0)
+            DESIRED_SPEED = self.speed_limit * 0.7 - np.random.uniform(0., 2.0)
             MAX_ACCELERATION = np.random.uniform(1.0, 2.0)
             DESIRED_DECELERATION = 2.5
             SAFE_BRAKE = 3.0

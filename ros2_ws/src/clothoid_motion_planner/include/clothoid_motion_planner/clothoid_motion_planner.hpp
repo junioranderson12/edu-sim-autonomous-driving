@@ -14,6 +14,7 @@ struct Lane {
 struct Road {
   std::vector<Lane> lanes; // List of lanes in the road
   int number_of_lanes;
+  std::vector<double> lane_centers;
 };
 
 struct State {
@@ -45,6 +46,8 @@ class ClothoidMotionPlanner {
                               const std::vector<double>& vfs);
     std::vector<Trajectory> SampleTrajectories(
             const custom_interfaces::msg::VehicleState& ego_vehicle_state);
+    int GetClosestLaneIndex(double lat_pos,
+            const std::vector<double>& lane_centers);
     std::vector<Trajectory> CheckCollisions(
             std::vector<Trajectory>& trajectories, 
             const std::vector<custom_interfaces::msg::VehicleState>& vehicles_states);
@@ -59,9 +62,11 @@ class ClothoidMotionPlanner {
     
     const double kXMin = -100.0; // Minimum x-coordinate for the lane
     const double kLaneWidth = 3.5; // Width of the lane
-    const double kCostCurvature = 1.0;
-    const double kCostVelocity = 1.0;
-    const double kMaxSpeed = 17.0;
+    const double kCostCurvature = 5.0;
+    const double kCostHeading = 15.0;
+    const double kCostVelocity = 5.0;
+    const double kCostDeltaY = 0.0;
+    const double kMaxSpeed = 20.0;
     const double kT = 5.0; //horizon time in seconds
 
     ClothoidPath clothoid_path;

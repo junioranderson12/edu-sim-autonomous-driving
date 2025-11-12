@@ -5,8 +5,10 @@ from builtin_interfaces.msg import Time
 from visualization_msgs.msg import Marker, MarkerArray
 
 import numpy as np
+import time
 
 from self_driving_sim.simulator import Simulator
+from self_driving_sim.dynamics import Vehicle
 from custom_interfaces.msg import ControlInputs, VehicleState, VehicleStates
 
 class SimulatorNode(Node):
@@ -21,6 +23,7 @@ class SimulatorNode(Node):
         self.control_inputs_subscription = self.create_subscription(ControlInputs,'control_inputs', self.control_callback, 10)
         self.control_acc = 0.0
         self.control_curv_derivative = 0.0
+        self.is_updated = False
         self.get_logger().info('Node created')
 
     def publish_clock(self, time_stamp):
@@ -32,7 +35,7 @@ class SimulatorNode(Node):
         return clock_msg
     
     def publish_ego_vehicle_state(self, vehicles: dict):
-        ego_vehicle = vehicles[1] # Assuming vehicle with id 1 is the ego vehicle
+        ego_vehicle = vehicles[Vehicle.controlled_vehicle_id] # Assuming vehicle with id 1 is the ego vehicle
         ego_vehicle_state_msg = VehicleState()
         ego_vehicle_state_msg.id = int(ego_vehicle.id)
         ego_vehicle_state_msg.lon_pos = float(ego_vehicle.lon_pos)
@@ -48,6 +51,8 @@ class SimulatorNode(Node):
     def publish_vehicle_states(self, vehicles: dict):
         vehicle_states_msg = VehicleStates()
         for vehicle in vehicles.values():
+            if vehicle.id == Vehicle.controlled_vehicle_id:
+                continue  # Skip ego vehicle
             vehicle_state_msg = VehicleState()
             vehicle_state_msg.id = int(vehicle.id)
             vehicle_state_msg.lon_pos = float(vehicle.lon_pos)
@@ -56,6 +61,7 @@ class SimulatorNode(Node):
             vehicle_state_msg.speed = float(vehicle.speed)
             vehicle_state_msg.length = float(vehicle.features['length'])
             vehicle_state_msg.width = float(vehicle.features['width'])
+            vehicle_state_msg.lane = int(vehicle.lane)
         
             vehicle_states_msg.states.append(vehicle_state_msg)
         self.vehicle_states_publisher_.publish(vehicle_states_msg)
@@ -100,7 +106,10 @@ class SimulatorNode(Node):
     def control_callback(self, msg):
         self.control_acc = msg.acceleration
         self.control_curv_derivative = msg.curv_derivative
-        self.get_logger().info(f'acceleration: {self.control_acc}, curvature: {self.control_curv_derivative}')
+        if self.simulator.frame < 2:
+            self.control_acc = 0.0
+            self.control_curv_derivative = 0.0
+        self.get_logger().info(f'acc: {self.control_acc:.3f}, curv_deriv: {self.control_curv_derivative:.3f}')
 
     def run_episode(self):
         # Simulate the vehicles
@@ -110,8 +119,12 @@ class SimulatorNode(Node):
             self.publish_markers(self.simulator.vehicle_dict)
             self.publish_ego_vehicle_state(self.simulator.vehicle_dict)
             self.publish_vehicle_states(self.simulator.vehicle_dict)
+            
             rclpy.spin_once(self)
+            #time.sleep(0.5)
             self.simulator.run_frame(self.control_curv_derivative, self.control_acc)
+            
+            
 
     def run(self):
         while self.simulator.episode < self.simulator.max_episodes:
@@ -129,13 +142,12 @@ def main(args=None):
     simulator = Simulator('self_driving_sim')
     
     simulator_node = SimulatorNode(simulator)
+    time.sleep(3.0)
     simulator_node.run()
     simulator_node.get_logger().info('Finished')
     #rclpy.spin(simulator_node)
 
-    # Destroy the node explicitly
-    simulator_node.destroy_node()
-    rclpy.shutdown()
+    
 
 if __name__ == '__main__':
     main()

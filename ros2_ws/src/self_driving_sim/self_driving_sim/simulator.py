@@ -200,6 +200,7 @@ class Simulator:
             #Vehicles color
             if vehicle.id == Vehicle.controlled_vehicle_id:
                 facecolor = 'red'
+                x_pos_ego = vehicle.lon_pos
             else:
                 facecolor = 'blue'
             scale = 1.0
@@ -216,7 +217,7 @@ class Simulator:
             self.ax.add_patch(rect)
             rect_list.append(rect)
 
-        plt.xlim([self.X_VIEW_MIN, self.X_VIEW_MAX])
+        plt.xlim([self.X_VIEW_MIN + x_pos_ego, self.X_VIEW_MAX + x_pos_ego])
         #plt.ylim([self.Y_VIEW_MIN, self.Y_VIEW_MAX])
         plt.xlabel("x [m]")
         plt.ylabel("y [m]")

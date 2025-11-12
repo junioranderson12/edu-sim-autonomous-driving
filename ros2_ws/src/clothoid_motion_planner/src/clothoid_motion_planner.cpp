@@ -29,6 +29,7 @@ Road ClothoidMotionPlanner::MakeRoad(int number_of_lanes) {
   for (int lane_id = 0; lane_id < number_of_lanes; ++lane_id) {
       Lane lane = MakeLane(lane_id);
       road.lanes.push_back(lane);
+      road.lane_centers.push_back(lane_id * kLaneWidth);
   }
   road.number_of_lanes = number_of_lanes;
   return road;
@@ -101,17 +102,17 @@ std::vector<Trajectory> ClothoidMotionPlanner::SampleTrajectories(
   std::vector<double> yf;
   double current_lane_position = lane_id * kLaneWidth;
   if (lane_id == 0){
-    yf = {current_lane_position, -kLaneWidth};
+    yf = {current_lane_position, kLaneWidth};
   } else if (lane_id == road.number_of_lanes - 1){
-    yf = {current_lane_position, current_lane_position + kLaneWidth};
+    yf = {current_lane_position, current_lane_position - kLaneWidth};
   } else {
     yf = {current_lane_position, 
             current_lane_position - kLaneWidth,
             current_lane_position + kLaneWidth};
   }
   double v0 = ego_vehicle_state.speed;
-  std::vector<double> vfs = { std::max(v0 - 5.0, 0.),
-                              std::max(v0 - 4.0, 0.),
+  std::vector<double> vfs = { std::max(v0 - 7.5, 0.),
+                              std::max(v0 - 5.0, 0.),
                               std::max(v0 - 3.0, 0.),
                               std::max(v0 - 2.0, 0.),
                               std::max(v0 - 1.0, 0.),
@@ -122,6 +123,16 @@ std::vector<Trajectory> ClothoidMotionPlanner::SampleTrajectories(
                               v0 + 4.0,
                               v0 + 5.0};
   return MakeTrajectories(init_state, yf, vfs);
+}
+
+int ClothoidMotionPlanner::GetClosestLaneIndex(double lat_pos, const std::vector<double>& lane_centers) {
+    auto it = std::min_element(
+        lane_centers.begin(), lane_centers.end(),
+        [lat_pos](double a, double b) {
+            return std::abs(a - lat_pos) < std::abs(b - lat_pos);
+        });
+
+    return std::distance(lane_centers.begin(), it);
 }
 
 std::vector<Trajectory> ClothoidMotionPlanner::CheckCollisions(
@@ -135,6 +146,7 @@ std::vector<Trajectory> ClothoidMotionPlanner::CheckCollisions(
       double length = vehicle_state.length;
       double width = vehicle_state.width;
       double speed = vehicle_state.speed;
+      int lane = vehicle_state.lane;
       for (const auto& state : trajectory.states) {
         //Constant speed assumption for other vehicles
         //TODO : improve with interaction model
@@ -143,8 +155,15 @@ std::vector<Trajectory> ClothoidMotionPlanner::CheckCollisions(
         if (x < state.x){
           continue;
         }
+        //ttc calculation
+        double ttc = (x - state.x) / (state.v + 1e-5);
+        int current_lane = GetClosestLaneIndex(state.y, road.lane_centers);
+        if (ttc < 1.0 && lane == current_lane){ // 2 seconds time to collision threshold
+          trajectory.is_colliding = true;
+          break;
+        }
         // Simple bounding box collision check
-        if (std::abs(state.x - x) < length / 2 && std::abs(state.y - y) < width / 2) {
+        if (std::abs(state.x - x) < length && std::abs(state.y - y) < width) {
           trajectory.is_colliding = true;
           break;
         }
@@ -163,14 +182,16 @@ Trajectory ClothoidMotionPlanner::GetOptimaTrajectory(
   Trajectory optimal_trajectory;
   for (const auto& trajectory : trajectories) {
     double cost = GetTrajCost(trajectory);
-    if ((cost < min_cost) && (!trajectory.is_colliding)) {
+    // std::cerr << "Trajectory cost: " << cost 
+    //           << (trajectory.is_colliding ? " (colliding)" : " (free)") << std::endl;
+    if (cost < min_cost) {
       min_cost = cost;
       optimal_trajectory = trajectory;
     }
   }
-  for (const auto& state : optimal_trajectory.states) {
-    std::cerr << "Optimal Trajectory State: x=" << state.x << ", y=" << state.y << ", v=" << state.v << ", kappa=" << state.kappa << std::endl;
-  }
+  // for (const auto& state : optimal_trajectory.states) {
+  //   std::cerr << "Optimal Trajectory State: x=" << state.x << ", y=" << state.y << ", v=" << state.v << ", kappa=" << state.kappa << std::endl;
+  // }
   return optimal_trajectory;
 }
 
@@ -186,15 +207,25 @@ double ClothoidMotionPlanner::GetTrajCost(const Trajectory& trajectory) {
 }
 
 double ClothoidMotionPlanner::GetStateCost(const State& state) {
-  return  state.kappa * abs(kCostCurvature) + 
-    (std::pow(kMaxSpeed - state.v, 2)) * kCostVelocity;
+  double delta_y = 0.0;
+  for (const auto& lane : road.lanes) {
+    double lane_center = lane.id * kLaneWidth;
+    if (std::abs(state.y - lane_center) <= kLaneWidth / 2) {
+      delta_y = state.y - lane_center;
+    }
+  }
+  return  std::pow(state.kappa, 2) * kCostCurvature +
+              std::pow(state.theta, 2) * kCostHeading + 
+              std::pow(kMaxSpeed - state.v, 2) * kCostVelocity +
+              std::pow(delta_y, 2) * kCostDeltaY;
 }
 
 std::tuple<double, double> ClothoidMotionPlanner::GetOptimalAction(
   const Trajectory& optimal_trajectory) {
-
-  double curv_derivative = optimal_trajectory.states.front().c;
-  double acc = optimal_trajectory.states.back().acc;
+  
+  State first_state = optimal_trajectory.states.front();
+  double curv_derivative = first_state.c * first_state.v;
+  double acc = first_state.acc;
   return std::make_tuple(curv_derivative, acc);
 }
 

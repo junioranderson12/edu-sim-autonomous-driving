@@ -711,7 +711,7 @@ OptimalClothoidParams ClothoidPath::GetOptimalClothoidParams(ClothoidParams init
     optimal_params.s_sum = P(2);
     k += 1;
     if (k > kMaxIterations) {
-      std::cout << "Maximum number of iterations reached. "
+      std::cerr << "Maximum number of iterations reached. "
                 << "Returning the last solution." << std::endl;
       break;
     }
@@ -741,13 +741,12 @@ Path ClothoidPath::GetOptimalPath(Pose init_pose,
     div_s2 = 5.0;
     div_s3 = 2.5;
   }
-  double sigma1 = clot_path_params.c[0];
-  double sigma2 = clot_path_params.c[1];
+  double sigma1 = 0.0; //clot_path_params.c[0];
+  double sigma2 = 0.0; //clot_path_params.c[1];
   double s_sum = std::accumulate(clot_path_params.s.begin(),
                                   clot_path_params.s.end(), 0.0);
   OptimalClothoidParams solution = {sigma1, sigma2, s_sum};
   solution =  GetOptimalClothoidParams(init_params, final_pose, kappaf, solution);
-
   //We need to compute sigma3 to get the whole path
   double kappa2 = init_params.kappa0 + solution.sigma1 * solution.s_sum / div_s1 +
                           solution.sigma2 * solution.s_sum / div_s2;

@@ -25,9 +25,9 @@ public:
     auto ego_vehicle_state_callback =
       [this](const custom_interfaces::msg::VehicleState::SharedPtr msg) -> void {
          ego_vehicle_state = *msg;
-         RCLCPP_INFO(this->get_logger(), "Received ego vehicle state: curv=%f, speed=%f",
-                     ego_vehicle_state.curvature,
-                     ego_vehicle_state.speed);
+        //  RCLCPP_INFO(this->get_logger(), "State: curv=%f, speed=%f",
+        //              ego_vehicle_state.curvature,
+        //              ego_vehicle_state.speed);
       };
     auto vehicle_states_callback =
       [this](const custom_interfaces::msg::VehicleStates::SharedPtr msg) -> void {
@@ -35,41 +35,62 @@ public:
         //RCLCPP_INFO(this->get_logger(), "Received %zu vehicle states", vehicles_states.size());
       };
     
-    auto timer_callback =
-      [this]() -> void {
-        if (vehicles_states.size() == 0) {
-          RCLCPP_WARN(this->get_logger(), "No vehicle states received yet. Skipping control input computation.");
-          return;
-        }
-        //RCLCPP_INFO(this->get_logger(), "Received %zu vehicle states", vehicles_states.size());
-        auto optimal_trajectory = planner.GetOptimaTrajectory(ego_vehicle_state, vehicles_states);
-        auto [curv_derivative, acc] = planner.GetOptimalAction(optimal_trajectory);
-        auto msg = custom_interfaces::msg::ControlInputs();
-        msg.curv_derivative = curv_derivative;
-        msg.acceleration = acc;
-        RCLCPP_INFO(this->get_logger(), "Publishing control inputs: curv_deriv=%f, acc=%f",
-                        msg.curv_derivative, msg.acceleration);
-        RCLCPP_INFO(this->get_logger(),
-                  "Current time: %.6f s",
-                  this->now().seconds());
-        this->control_publisher_->publish(msg);
-      };
+    // auto timer_callback =
+    //   [this]() -> void {
+    //     if (vehicles_states.size() == 0) {
+    //       RCLCPP_WARN(this->get_logger(), "No vehicle states received yet. Skipping control input computation.");
+    //       return;
+    //     }
+    //     //RCLCPP_INFO(this->get_logger(), "Received %zu vehicle states", vehicles_states.size());
+    //     auto optimal_trajectory = planner.GetOptimaTrajectory(ego_vehicle_state, vehicles_states);
+    //     auto [curv_derivative, acc] = planner.GetOptimalAction(optimal_trajectory);
+    //     auto msg = custom_interfaces::msg::ControlInputs();
+    //     msg.curv_derivative = curv_derivative;
+    //     msg.acceleration = acc;
+    //     RCLCPP_INFO(this->get_logger(), "Inputs: curv_deriv=%f, acc=%f",
+    //                     msg.curv_derivative, msg.acceleration);
+    //     RCLCPP_INFO(this->get_logger(),
+    //               "Current time: %.6f s",
+    //               this->now().seconds());
+    //     this->control_publisher_->publish(msg);
+    //   };
       
-    timer_ = this->create_wall_timer(100ms, timer_callback);
+    // timer_ = this->create_wall_timer(1ms, timer_callback);
 
+    auto clock = this->get_clock();  // respeita use_sim_time = true
 
-    // auto clock = this->get_clock();  // respeita use_sim_time = true
+    timer_ = rclcpp::create_timer(
+        this->get_node_base_interface(),
+        this->get_node_timers_interface(),
+        clock,
+        std::chrono::milliseconds(200),
+        [this]() {
+          if (vehicles_states.size() == 0) {
+            RCLCPP_WARN(this->get_logger(), "No vehicle states received yet. Skipping control input computation.");
+            return;
+          }
+          //RCLCPP_INFO(this->get_logger(), "Received %zu vehicle states", vehicles_states.size());
+          auto optimal_trajectory = planner.GetOptimaTrajectory(ego_vehicle_state, vehicles_states);
+          auto [curv_derivative, acc] = planner.GetOptimalAction(optimal_trajectory);
+          auto msg = custom_interfaces::msg::ControlInputs();
+          msg.curv_derivative = curv_derivative;
+          msg.acceleration = acc;
 
-    // timer_ = rclcpp::create_timer(
-    //     this->get_node_base_interface(),
-    //     this->get_node_timers_interface(),
-    //     clock,
-    //     std::chrono::milliseconds(500),
-    //     [this]() {
-    //       RCLCPP_INFO(this->get_logger(),
-    //                   "Timer fired at sim time: %.3f s",
-    //                   this->now().seconds());
-    //     });
+          //Logging
+          // RCLCPP_INFO(this->get_logger(),
+          //             "Timer fired at sim time: %.3f s",
+          //             this->now().seconds());
+          // RCLCPP_INFO(this->get_logger(), "State: y=%f, theta=%f, curv=%f, speed=%f",
+          //            ego_vehicle_state.lat_pos,
+          //            ego_vehicle_state.heading,
+          //            ego_vehicle_state.curvature,
+          //            ego_vehicle_state.speed);
+          // RCLCPP_INFO(this->get_logger(), "Inputs: curv_deriv=%f, acc=%f",
+          //                 msg.curv_derivative, msg.acceleration);
+
+          //Publish control inputs
+          this->control_publisher_->publish(msg);
+        });
 
     ego_vehicle_state_subscription_ =
       this->create_subscription<custom_interfaces::msg::VehicleState>("ego_vehicle_state", 10, 
