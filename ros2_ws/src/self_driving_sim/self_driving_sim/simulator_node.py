@@ -3,6 +3,8 @@ from rclpy.node import Node
 from rosgraph_msgs.msg import Clock
 from builtin_interfaces.msg import Time
 from visualization_msgs.msg import Marker, MarkerArray
+from geometry_msgs.msg import TransformStamped
+from tf2_ros import TransformBroadcaster
 
 import numpy as np
 import time
@@ -21,6 +23,7 @@ class SimulatorNode(Node):
         self.vehicle_states_publisher_ = self.create_publisher(VehicleStates, 'vehicle_states', 10)
         self.ego_vehicle_state_publisher_ = self.create_publisher(VehicleState, 'ego_vehicle_state', 10)
         self.control_inputs_subscription = self.create_subscription(ControlInputs,'control_inputs', self.control_callback, 10)
+        self.tf_broadcaster = TransformBroadcaster(self)
         self.control_acc = 0.0
         self.control_curv_derivative = 0.0
         self.is_updated = False
@@ -92,7 +95,7 @@ class SimulatorNode(Node):
             # Position of the center of the rectangle
             marker.pose.position.x = vehicle.lon_pos
             marker.pose.position.y = vehicle.lat_pos
-            marker.pose.position.z = 0.01  # Slightly above the ground to be visible
+            marker.pose.position.z = 0.2  # Slightly above the ground to be visible
 
             qx, qy, qz, qw = self.yaw_to_quaternion(vehicle.heading)
             marker.pose.orientation.x = qx
@@ -101,6 +104,45 @@ class SimulatorNode(Node):
             marker.pose.orientation.w = qw
             
             marker_array.markers.append(marker)
+
+            if vehicle.id == Vehicle.controlled_vehicle_id:
+                #Color
+                marker.color.r = 1.0
+                marker.color.g = 0.0
+                marker.color.b = 0.0
+                marker.color.a = 1.0
+
+                # Publish TF for ego vehicle
+                tf_msg = TransformStamped()
+                tf_msg.header.stamp = self.get_clock().now().to_msg()
+                tf_msg.header.frame_id = "map"       # frame global
+                tf_msg.child_frame_id = "ego_vehicle"     # frame do marker
+
+                tf_msg.transform.translation.x = vehicle.lon_pos
+                tf_msg.transform.translation.y = vehicle.lat_pos
+                tf_msg.transform.translation.z = 0.2
+
+                tf_msg.transform.rotation = marker.pose.orientation
+
+                self.tf_broadcaster.sendTransform(tf_msg)
+                
+                # Publish TF for camera
+                tf_msg = TransformStamped()
+                tf_msg.header.stamp = self.get_clock().now().to_msg()
+                tf_msg.header.frame_id = "ego_vehicle"       # frame global
+                tf_msg.child_frame_id = "camera"     # frame do marker
+
+                tf_msg.transform.translation.x = -3.0
+                tf_msg.transform.translation.y = 0.0
+                tf_msg.transform.translation.z = 3.0
+
+                tf_msg.transform.rotation.x = 0.0
+                tf_msg.transform.rotation.y = 0.0
+                tf_msg.transform.rotation.z = 0.0
+                tf_msg.transform.rotation.w = 1.0
+
+                self.tf_broadcaster.sendTransform(tf_msg)
+
         self.marker_array_publisher_.publish(marker_array)
     
     def control_callback(self, msg):
@@ -121,7 +163,7 @@ class SimulatorNode(Node):
             self.publish_vehicle_states(self.simulator.vehicle_dict)
             
             rclpy.spin_once(self)
-            #time.sleep(0.5)
+            
             self.simulator.run_frame(self.control_curv_derivative, self.control_acc)
             
             
@@ -130,6 +172,7 @@ class SimulatorNode(Node):
         while self.simulator.episode < self.simulator.max_episodes:
             self.simulator.initialize_episode()
             self.run_episode()
+            time.sleep(0.5)
             self.get_logger().info('Episode %d completed' % self.simulator.episode)
             self.simulator.episode += 1
 
