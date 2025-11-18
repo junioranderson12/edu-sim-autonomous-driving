@@ -40,6 +40,21 @@ RUN pip3 install --break-system-packages \
 # Install gdb for debugging
 RUN apt-get update && apt-get install -y gdb
 
+# Install dependencies
+RUN apt update && apt install -y python3-venv
+
+# Create virtual environment
+RUN python3 -m venv /venv
+
+# Install PyTorch inside the venv (using full path to pip)
+RUN /venv/bin/pip install --upgrade pip && \
+    /venv/bin/pip install numpy torch --index-url https://download.pytorch.org/whl/cu118
+
+RUN /venv/bin/pip install matplotlib toml
+
+# Make venv the default python for the container
+ENV PATH="/venv/bin:$PATH"
+
 # Create a workspace directory
 RUN mkdir -p /root/ros2_ws/src
 
